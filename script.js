@@ -12,7 +12,7 @@
  * 7.  Alert user on submission failure
  * 8.  Multiple per-option Flatpickr date ranges
  * 9.  Highlight Sep 13–17, 2026 (included nights) in all calendars
- * 10. Pre/Post nights: disable Sep 13–17 (cannot be selected)
+ * 10. Pre/Post nights: Sep 13–17 selectable but not charged (allows pre+post in one range)
  * 11. Enable Submit button only when form is valid
  * 12. Modular, commented, ready to drop into HTML
  *
@@ -44,14 +44,6 @@
     from: new Date(2026, 8, 13),
     to: new Date(2026, 8, 17),
   };
-
-  const INCLUDED_NIGHT_DATES = [
-    new Date(2026, 8, 13),
-    new Date(2026, 8, 14),
-    new Date(2026, 8, 15),
-    new Date(2026, 8, 16),
-    new Date(2026, 8, 17),
-  ];
 
   const DEFAULT_CALENDAR_YEAR = 2026;
   const DEFAULT_CALENDAR_MONTH = 8; // 0-indexed = September
@@ -203,9 +195,8 @@
       },
     };
 
-    if (optionId === 'pre-post-night') {
-      opts.disable = INCLUDED_NIGHT_DATES;
-    }
+    // Pre/post-night: Sep 13–17 remain selectable but are excluded from chargeable nights
+    // (allows booking both pre- and post-nights in one range, e.g. Sep 10 – Sep 20)
 
     flatpickrInstances[optionId] = flatpickr(input, opts);
   }

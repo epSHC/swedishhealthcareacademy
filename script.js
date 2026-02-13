@@ -8,46 +8,26 @@
 (function () {
   'use strict';
 
-  // -------------------------------------------------------------------------
-  // Constants
-  // -------------------------------------------------------------------------
+  // ==========================================================================
+  // 1. CONSTANTS
+  // ==========================================================================
+
   const OPTIONS = {
-    companion: {
-      id: 'companion',
-      name: 'Companion rate',
-      pricePerNight: 425,
-    },
-    'pre-post-night': {
-      id: 'pre-post-night',
-      name: 'Pre- or post-night',
-      pricePerNight: 360,
-    },
-    'superior-room': {
-      id: 'superior-room',
-      name: 'Room upgrade – Superior Room',
-      pricePerNight: 80,
-    },
-    'superior-terrace': {
-      id: 'superior-terrace',
-      name: 'Room upgrade – Superior Room with terrace',
-      pricePerNight: 280,
-    },
+    companion: { id: 'companion', name: 'Companion rate', pricePerNight: 425 },
+    'pre-post-night': { id: 'pre-post-night', name: 'Pre- or post-night', pricePerNight: 360 },
+    'superior-room': { id: 'superior-room', name: 'Room upgrade – Superior Room', pricePerNight: 80 },
+    'superior-terrace': { id: 'superior-terrace', name: 'Room upgrade – Superior Room with terrace', pricePerNight: 280 },
   };
 
-  /** Option IDs that have a per-night rate and need a date range */
+  /** Option IDs that require a per-option Flatpickr date range */
   const PER_NIGHT_OPTION_IDS = ['companion', 'pre-post-night', 'superior-room', 'superior-terrace'];
 
-  /** Included nights (part of base trip) – highlighted in calendar; not selectable/chargeable for pre/post */
+  /** Included nights (Sep 13–17, 2026) – highlighted in calendar; blocked for pre/post-night */
   const INCLUDED_NIGHTS = {
     from: new Date(2026, 8, 13),
     to: new Date(2026, 8, 17),
   };
 
-  /** Calendar opens on September 2026 */
-  const DEFAULT_CALENDAR_YEAR = 2026;
-  const DEFAULT_CALENDAR_MONTH = 8; // 0-indexed (September)
-
-  /** Sep 13–17 as discrete dates (for disabling in pre/post-night picker only) */
   const INCLUDED_NIGHT_DATES = [
     new Date(2026, 8, 13),
     new Date(2026, 8, 14),
@@ -56,9 +36,13 @@
     new Date(2026, 8, 17),
   ];
 
-  // -------------------------------------------------------------------------
-  // DOM references
-  // -------------------------------------------------------------------------
+  const DEFAULT_CALENDAR_YEAR = 2026;
+  const DEFAULT_CALENDAR_MONTH = 8; // 0-indexed = September
+
+  // ==========================================================================
+  // 2. DOM REFERENCES
+  // ==========================================================================
+
   const form = document.getElementById('order-form');
   const formSection = document.getElementById('form-section');
   const confirmationSection = document.getElementById('confirmation-section');
@@ -70,18 +54,16 @@
   const fullNameError = document.getElementById('full-name-error');
   const emailError = document.getElementById('email-error');
   const backToFormBtn = document.getElementById('back-to-form');
-
-  /** Hidden input that will carry the JSON application payload for Netlify */
   const applicationInput = form ? form.querySelector('input[name="application"]') : null;
 
-  /** Per-option date range: optionId -> [fromDate, toDate] or null */
+  /** Per-option date ranges: optionId -> [fromDate, toDate] or null */
   let optionDateRanges = {};
-  /** Per-option Flatpickr instances: optionId -> Flatpickr */
+  /** Per-option Flatpickr instances */
   let flatpickrInstances = {};
 
-  // -------------------------------------------------------------------------
-  // Helpers
-  // -------------------------------------------------------------------------
+  // ==========================================================================
+  // 3. HELPERS
+  // ==========================================================================
 
   function escapeHtml(text) {
     const div = document.createElement('div');
@@ -89,10 +71,6 @@
     return div.innerHTML;
   }
 
-  /**
-   * Generate a unique ID for an application (included in JSON for reference).
-   * @returns {string}
-   */
   function generateId() {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       return crypto.randomUUID();
@@ -100,18 +78,9 @@
     return 'app_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
   }
 
-  /**
-   * Count calendar nights between two dates (inclusive).
-   */
   function countNights(from, to) {
     if (!from || !to || to < from) return 0;
-    const ms = to.getTime() - from.getTime();
-    return Math.floor(ms / (24 * 60 * 60 * 1000)) + 1;
-  }
-
-  function formatDate(d) {
-    if (!d || !(d instanceof Date)) return '';
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return Math.floor((to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000)) + 1;
   }
 
   function isIncludedNight(d) {
@@ -120,9 +89,9 @@
   }
 
   /**
-   * Chargeable nights for an option. Sep 13–17 are included in the trip:
-   * - Pre/post night: only nights OUTSIDE Sep 13–17 are chargeable.
-   * - Other per-night options: all nights in the selected range are chargeable.
+   * Chargeable nights:
+   * - Pre/post-night: only nights outside Sep 13–17
+   * - Other options: all nights in range
    */
   function getChargeableNights(optionId, from, to) {
     if (!from || !to || to < from) return 0;
@@ -140,18 +109,15 @@
     return countNights(from, to);
   }
 
-  // -------------------------------------------------------------------------
-  // Validation
-  // -------------------------------------------------------------------------
+  // ==========================================================================
+  // 4. VALIDATION – full name & email
+  // ==========================================================================
 
   function isValidEmail(value) {
     if (!value || typeof value !== 'string') return false;
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
   }
 
-  /**
-   * Update submit button disabled state based on name + email validity (UI only).
-   */
   function updateSubmitButtonState() {
     const submitBtn = document.getElementById('submit-btn');
     if (!submitBtn) return;
@@ -160,6 +126,7 @@
     submitBtn.disabled = !(name && isValidEmail(email));
   }
 
+  /** Validates name and email; returns true if valid, sets error messages otherwise */
   function validateForm() {
     const name = fullNameInput.value.trim();
     const email = emailInput.value.trim();
@@ -188,9 +155,9 @@
     return valid;
   }
 
-  // -------------------------------------------------------------------------
-  // Per-option date pickers (Flatpickr)
-  // -------------------------------------------------------------------------
+  // ==========================================================================
+  // 5. FLATPICKR – per-option date ranges
+  // ==========================================================================
 
   function createFlatpickrForOption(optionId) {
     const input = document.getElementById('date-input-' + optionId);
@@ -208,20 +175,17 @@
         updateOrderSummary();
       },
       onDayCreate: function (dObj, dStr, fp, dayElem) {
-        const d = dayElem.dateObj;
-        if (d && isIncludedNight(d)) {
+        if (dayElem.dateObj && isIncludedNight(dayElem.dateObj)) {
           dayElem.classList.add('includedNight');
           dayElem.title = 'Included nights (part of your trip)';
         }
       },
       onReady: function (selectedDates, dateStr, fp) {
-        // Open the calendar on September 2026 without pre-selecting dates
         fp.changeYear(DEFAULT_CALENDAR_YEAR);
-        fp.changeMonth(DEFAULT_CALENDAR_MONTH, false); // false = absolute month (0-indexed), not offset
+        fp.changeMonth(DEFAULT_CALENDAR_MONTH, false);
       },
     };
 
-    // Pre/post-night only: disable Sep 13–17 so they cannot be selected (included in program).
     if (optionId === 'pre-post-night') {
       opts.disable = INCLUDED_NIGHT_DATES;
     }
@@ -257,9 +221,9 @@
     updateOrderSummary();
   }
 
-  // -------------------------------------------------------------------------
-  // Live order summary
-  // -------------------------------------------------------------------------
+  // ==========================================================================
+  // 6. LIVE ORDER SUMMARY
+  // ==========================================================================
 
   function updateOrderSummary() {
     const optionIds = getSelectedOptionIds();
@@ -294,9 +258,7 @@
 
       const li = document.createElement('li');
       const nightsLabel = opt.pricePerNight != null
-        ? (chargeableNights > 0
-            ? chargeableNights + ' night(s) · $' + lineTotal.toLocaleString()
-            : 'Select dates')
+        ? (chargeableNights > 0 ? chargeableNights + ' night(s) · $' + lineTotal.toLocaleString() : 'Select dates')
         : '';
       li.innerHTML = '<span>' + escapeHtml(opt.name) + '</span><span class="nights">' + nightsLabel + '</span>';
       summaryList.appendChild(li);
@@ -315,10 +277,14 @@
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Build application object (sent as JSON in hidden field to Netlify)
-  // -------------------------------------------------------------------------
+  // ==========================================================================
+  // 7. BUILD JSON OBJECT – for hidden "application" field
+  // ==========================================================================
 
+  /**
+   * Builds application JSON:
+   * { customer, options: [{ id, name, pricePerNight, dateFrom, dateTo, nights, total }], summary, submittedAt }
+   */
   function buildApplicationObject() {
     const optionIds = getSelectedOptionIds();
     const options = optionIds.map(function (id) {
@@ -333,9 +299,9 @@
         id: opt.id,
         name: opt.name,
         pricePerNight: opt.pricePerNight ?? null,
-        nights: opt.pricePerNight != null ? nights : null,
         dateFrom: range && range[0] ? range[0].toISOString().slice(0, 10) : null,
         dateTo: range && range[1] ? range[1].toISOString().slice(0, 10) : null,
+        nights: opt.pricePerNight != null ? nights : null,
         total: total,
       };
     }).filter(Boolean);
@@ -357,18 +323,16 @@
     };
   }
 
-  // -------------------------------------------------------------------------
-  // Submit to Netlify Forms and show confirmation
-  // -------------------------------------------------------------------------
+  // ==========================================================================
+  // 8. NETLIFY SUBMISSION & CONFIRMATION
+  // ==========================================================================
 
   function showConfirmation() {
     formSection.hidden = true;
     confirmationSection.hidden = false;
   }
 
-  /**
-   * Submit form via fetch so Netlify receives the POST; then show confirmation without navigating.
-   */
+  /** POST form to Netlify via fetch; returns Promise */
   function submitToNetlify(formElement) {
     const formData = new FormData(formElement);
     const action = formElement.getAttribute('action') || '/';
@@ -381,9 +345,26 @@
     });
   }
 
-  // -------------------------------------------------------------------------
-  // Event handlers
-  // -------------------------------------------------------------------------
+  function resetForm() {
+    form.reset();
+    if (applicationInput) applicationInput.value = '';
+    fullNameError.textContent = '';
+    emailError.textContent = '';
+    fullNameInput.classList.remove('invalid');
+    emailInput.classList.remove('invalid');
+    PER_NIGHT_OPTION_IDS.forEach(function (id) {
+      optionDateRanges[id] = null;
+      destroyFlatpickrForOption(id);
+      const container = document.getElementById('date-range-' + id);
+      if (container) container.hidden = true;
+    });
+    updateOrderSummary();
+    updateSubmitButtonState();
+  }
+
+  // ==========================================================================
+  // 9. EVENT HANDLERS
+  // ==========================================================================
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
@@ -404,6 +385,7 @@
       .then(function (response) {
         if (response.ok || response.redirected) {
           showConfirmation();
+          resetForm();
         } else {
           alert('Something went wrong. Please try again or submit later.');
         }
@@ -428,20 +410,7 @@
   backToFormBtn.addEventListener('click', function () {
     confirmationSection.hidden = true;
     formSection.hidden = false;
-    form.reset();
-    if (applicationInput) applicationInput.value = '';
-    fullNameError.textContent = '';
-    emailError.textContent = '';
-    fullNameInput.classList.remove('invalid');
-    emailInput.classList.remove('invalid');
-    PER_NIGHT_OPTION_IDS.forEach(function (id) {
-      optionDateRanges[id] = null;
-      destroyFlatpickrForOption(id);
-      const container = document.getElementById('date-range-' + id);
-      if (container) container.hidden = true;
-    });
-    updateOrderSummary();
-    updateSubmitButtonState();
+    resetForm();
   });
 
   fullNameInput.addEventListener('input', function () {
@@ -455,9 +424,10 @@
     updateSubmitButtonState();
   });
 
-  // -------------------------------------------------------------------------
-  // Init
-  // -------------------------------------------------------------------------
+  // ==========================================================================
+  // 10. INIT
+  // ==========================================================================
+
   PER_NIGHT_OPTION_IDS.forEach(function (id) {
     const container = document.getElementById('date-range-' + id);
     if (container) container.hidden = true;

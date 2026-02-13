@@ -1,8 +1,25 @@
 /**
- * Supplemental Charges – Trip Order
- * Vanilla JS: per-option date ranges (flatpickr), chargeable nights (Sep 13–17 excluded for pre/post),
- * validation, live summary. Submissions sent to Netlify Forms (no localStorage).
- * Application object is structured for backend/Stripe use and sent as JSON in hidden field.
+ * Supplemental Charges – Netlify Forms (Vanilla JS)
+ * =================================================
+ * Drop-in form handler for Netlify-hosted HTML. Requirements:
+ *
+ * 1.  Validate full name + email (required, valid format)
+ * 2.  Track optional charges + selected dates per option
+ * 3.  Build JSON: { customer, options, summary, submittedAt }
+ * 4.  Set JSON on hidden input name="application"
+ * 5.  Submit via fetch POST to "/" with FormData(form)
+ * 6.  Show confirmation section on success, hide form
+ * 7.  Alert user on submission failure
+ * 8.  Multiple per-option Flatpickr date ranges
+ * 9.  Highlight Sep 13–17, 2026 (included nights) in all calendars
+ * 10. Pre/Post nights: disable Sep 13–17 (cannot be selected)
+ * 11. Enable Submit button only when form is valid
+ * 12. Modular, commented, ready to drop into HTML
+ *
+ * HTML: form#order-form, input[name="application"], #full-name, #email,
+ *       .option-checkbox (value=optionId), #date-input-{optionId}, #date-range-{optionId},
+ *       #form-section, #confirmation-section, #submit-btn, #back-to-form
+ * Deps: Flatpickr
  */
 
 (function () {

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supplemental Charges – Trip Order</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-inner">
+        <div class="header-brand">
+          <img src="assets/shc_logo.png" alt="Swedish HealthCare Academy" class="site-logo">
+          <div class="header-text">
+            <h1>Supplemental Charges</h1>
+            <p class="subtitle">Select optional charges for your trip</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section id="form-section" class="form-section">
+        <form id="order-form" class="order-form" name="supplemental-charges" method="POST" action="/" data-netlify="true" novalidate>
+          <input type="hidden" name="form-name" value="supplemental-charges">
+          <input type="hidden" name="application" value="">
+
+          <!-- Customer details card -->
+          <div class="card card-details">
+            <h2 class="card-title">Your details</h2>
+            <div class="field">
+              <label for="full-name">Full name <span class="required">*</span></label>
+              <input type="text" id="full-name" name="fullName" required placeholder="e.g. Jane Smith" autocomplete="name">
+              <span class="field-error" id="full-name-error" aria-live="polite"></span>
+            </div>
+            <div class="field">
+              <label for="email">Email address <span class="required">*</span></label>
+              <input type="email" id="email" name="email" required placeholder="jane@example.com" autocomplete="email">
+              <span class="field-error" id="email-error" aria-live="polite"></span>
+            </div>
+          </div>
+
+          <!-- Optional charges: selectable cards -->
+          <div class="card card-options">
+            <h2 class="card-title">Optional charges</h2>
+            <p class="card-note">Select any supplemental charges. Each option has its own date range.</p>
+            <p class="included-nights-global">Included in your trip: Double room for single use, <strong>September 13–17, 2026</strong> (highlighted in each calendar). Pre- and post-night are for dates outside this period only.</p>
+
+            <div class="option option-card" data-option-id="companion" data-price="425" data-per-night="true">
+              <label class="option-card-inner">
+                <input type="checkbox" name="option" value="companion" class="option-checkbox">
+                <span class="option-card-content">
+                  <span class="option-name">Companion rate</span>
+                  <span class="option-desc">Add a companion to your stay at a fixed per-night rate.</span>
+                  <span class="option-price">$425 <span class="option-price-unit">per night</span></span>
+                </span>
+              </label>
+              <div id="date-range-companion" class="option-date-range" hidden>
+                <label for="date-input-companion">Select dates for this option</label>
+                <input type="text" id="date-input-companion" class="date-range-input" placeholder="Choose dates" readonly>
+              </div>
+            </div>
+
+            <div class="option option-card" data-option-id="pre-post-night" data-price="360" data-per-night="true">
+              <label class="option-card-inner">
+                <input type="checkbox" name="option" value="pre-post-night" class="option-checkbox">
+                <span class="option-card-content">
+                  <span class="option-name">Pre- or post-night</span>
+                  <span class="option-desc">Additional nights before or after the program (Sep 13–17 cannot be selected).</span>
+                  <span class="option-price">$360 <span class="option-price-unit">per night</span></span>
+                </span>
+              </label>
+              <div id="date-range-pre-post-night" class="option-date-range" hidden>
+                <label for="date-input-pre-post-night">Select dates (only before or after Sep 13–17)</label>
+                <input type="text" id="date-input-pre-post-night" class="date-range-input" placeholder="Choose dates" readonly>
+              </div>
+            </div>
+
+            <div class="option option-card" data-option-id="superior-room" data-price="80" data-per-night="true">
+              <label class="option-card-inner">
+                <input type="checkbox" name="option" value="superior-room" class="option-checkbox">
+                <span class="option-card-content">
+                  <span class="option-name">Room upgrade – Superior Room</span>
+                  <span class="option-desc">Upgrade to a Superior Room for your selected nights.</span>
+                  <span class="option-price">$80 <span class="option-price-unit">per night</span></span>
+                </span>
+              </label>
+              <div id="date-range-superior-room" class="option-date-range" hidden>
+                <label for="date-input-superior-room">Select dates for this option</label>
+                <input type="text" id="date-input-superior-room" class="date-range-input" placeholder="Choose dates" readonly>
+              </div>
+            </div>
+
+            <div class="option option-card" data-option-id="superior-terrace" data-price="280" data-per-night="true">
+              <label class="option-card-inner">
+                <input type="checkbox" name="option" value="superior-terrace" class="option-checkbox">
+                <span class="option-card-content">
+                  <span class="option-name">Room upgrade – Superior Room with terrace</span>
+                  <span class="option-desc">Upgrade to a Superior Room with private terrace.</span>
+                  <span class="option-price">$280 <span class="option-price-unit">per night</span></span>
+                </span>
+              </label>
+              <div id="date-range-superior-terrace" class="option-date-range" hidden>
+                <label for="date-input-superior-terrace">Select dates for this option</label>
+                <input type="text" id="date-input-superior-terrace" class="date-range-input" placeholder="Choose dates" readonly>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order summary (invoice-style) -->
+          <aside class="card card-summary" id="order-summary">
+            <h2 class="card-title">Order summary</h2>
+            <div id="summary-content" class="summary-content">
+              <p class="summary-empty" id="summary-empty">No options selected yet.</p>
+              <ul class="summary-list summary-invoice" id="summary-list" hidden></ul>
+              <p class="summary-total" id="summary-total" hidden></p>
+            </div>
+            <p class="summary-info">VAT, city tax and breakfast are included.</p>
+          </aside>
+
+          <div class="form-actions">
+            <button type="submit" id="submit-btn" class="btn btn-primary" disabled>Submit request</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="confirmation-section" class="confirmation-section" hidden>
+        <div class="confirmation-success-icon" aria-hidden="true"></div>
+        <h2 class="confirmation-title">Thank you</h2>
+        <p class="confirmation-message">Thank you! We will review your request and send you a payment link by email.</p>
+        <button type="button" id="back-to-form" class="btn btn-secondary">Submit another order</button>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Internal use. Payment links will be sent after review.</p>
+      <p>If you have any further requests or questions, please contact us at <a href="mailto:application@swedishhealthcare.se">application@swedishhealthcare.se</a>.</p>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="script.js"></script>
+</body>
+</html>
